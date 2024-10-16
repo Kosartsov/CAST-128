@@ -1,8 +1,12 @@
+# !pip install pycryptodome
 from Crypto.Cipher import CAST
 from Crypto.Random import get_random_bytes
+from Crypto.Util.Padding import pad
 
 def cast_encrypt(key, data):
 	cipher = CAST.new(key, CAST.MODE_ECB)
+	padded_data = pad(data, 8)  # 8 - размер блока для CAST
+  	encrypted_data = cipher.encrypt(padded_data)
 	encrypted_data = cipher.encrypt(data)
 	return encrypted_data
 
