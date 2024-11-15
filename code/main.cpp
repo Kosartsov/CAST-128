@@ -8,7 +8,7 @@
 #include <vector>
 #include <cstring>
 
-void encryptMessage(cast128& alg, const uint64_t key[2], const std::string& message) {
+void encryptMessage(cast128& alg, uint64_t key[2], std::string& message) {
     std::vector<uint64_t> blocks;
     size_t message_length = message.length();
     size_t num_blocks = (message_length + 7) / 8;
