@@ -19,6 +19,121 @@ uint32_t cyclic_left_shift(uint32_t x, uint32_t shift) {
 	return (x << shift) | (x >> (32 - shift));
 }
 
+uint64_t cast128::process(uint64_t msg, uint64_t key[2], bool to_encrypt) {
+	uint64_t res;
+
+	uint32_t K[32];
+
+	uint32_t x[4];
+
+	for (int i = 0; i < 4; ++i) {
+		uint32_t shift = (1 - i % 2) * 32;
+		x[i] = (((i <= 1) ? key[0] : key[1]) >> shift) & 0xFFFFFFFF;
+	}
+
+	uint32_t z[4] = {0, 0, 0, 0};
+
+	for (int i = 0; i < 2; ++i) {
+		z[0] = x[0] ^ S5[get(x, 0xD)] ^ S6[get(x, 0xF)] ^ S7[get(x, 0xC)] ^ S8[get(x, 0xE)] ^ S7[get(x, 0x8 )];
+        z[1] = x[2] ^ S5[get(z, 0x0)] ^ S6[get(z, 0x2)] ^ S7[get(z, 0x1)] ^ S8[get(z, 0x3)] ^ S8[get(x, 0xA )];
+        z[2] = x[3] ^ S5[get(z, 0x7)] ^ S6[get(z, 0x6)] ^ S7[get(z, 0x5)] ^ S8[get(z, 0x4)] ^ S5[get(x, 0x9 )];
+        z[3] = x[1] ^ S5[get(z, 0xA)] ^ S6[get(z, 0x9)] ^ S7[get(z, 0xB)] ^ S8[get(z, 0x8)] ^ S6[get(x, 0xB )];
+
+        K[0 + i * 16] = S5[get(z, 0x8)] ^ S6[get(z, 0x9)] ^ S7[get( z, 0x7)] ^ S8[get(z, 0x6)] ^ S5[get(z, 0x2)];
+        K[1 + i * 16] = S5[get(z, 0xA)] ^ S6[get(z, 0xB)] ^ S7[get( z, 0x5)] ^ S8[get(z, 0x4)] ^ S6[get(z, 0x6)];
+        K[2 + i * 16] = S5[get(z, 0xC)] ^ S6[get(z, 0xD)] ^ S7[get( z, 0x3)] ^ S8[get(z, 0x2)] ^ S7[get(z, 0x9)];
+        K[3 + i * 16] = S5[get(z, 0xE)] ^ S6[get(z, 0xF)] ^ S7[get( z, 0x1)] ^ S8[get(z, 0x0)] ^ S8[get(z, 0xC)];
+
+        x[0] = z[2] ^ S5[get(z, 0x5)] ^ S6[get(z, 0x7)] ^ S7[get(z, 0x4)] ^ S8[get(z, 0x6)] ^ S7[get(z, 0x0)];
+        x[1] = z[0] ^ S5[get(x, 0x0)] ^ S6[get(x, 0x2)] ^ S7[get(x, 0x1)] ^ S8[get(x, 0x3)] ^ S8[get(z, 0x2)];
+        x[2] = z[1] ^ S5[get(x, 0x7)] ^ S6[get(x, 0x6)] ^ S7[get(x, 0x5)] ^ S8[get(x, 0x4)] ^ S5[get(z, 0x1)];
+        x[3] = z[3] ^ S5[get(x, 0xA)] ^ S6[get(x, 0x9)] ^ S7[get(x, 0xB)] ^ S8[get(x, 0x8)] ^ S6[get(z, 0x3)];
+
+        K[4 + i * 16] = S5[get(x, 0x3)] ^ S6[get(x, 0x2)] ^ S7[get(x, 0xC)] ^ S8[get(x, 0xD)] ^ S5[get( x, 0x8)];
+        K[5 + i * 16] = S5[get(x, 0x1)] ^ S6[get(x, 0x0)] ^ S7[get(x, 0xE)] ^ S8[get(x, 0xF)] ^ S6[get( x, 0xD)];
+        K[6 + i * 16] = S5[get(x, 0x7)] ^ S6[get(x, 0x6)] ^ S7[get(x, 0x8)] ^ S8[get(x, 0x9)] ^ S7[get( x, 0x3)];
+        K[7 + i * 16] = S5[get(x, 0x5)] ^ S6[get(x, 0x4)] ^ S7[get(x, 0xA)] ^ S8[get(x, 0xB)] ^ S8[get( x, 0x7)];
+
+        z[0] = x[0] ^ S5[ get(x, 0xD)] ^ S6[get(x, 0xF)] ^ S7[get(x, 0xC )] ^ S8[get( x, 0xE )] ^ S7[get(x, 0x8)];
+        z[1] = x[2] ^ S5[ get(z, 0x0)] ^ S6[get(z, 0x2)] ^ S7[get(z, 0x1 )] ^ S8[get( z, 0x3 )] ^ S8[get(x, 0xA)];
+        z[2] = x[3] ^ S5[ get(z, 0x7)] ^ S6[get(z, 0x6)] ^ S7[get(z, 0x5 )] ^ S8[get( z, 0x4 )] ^ S5[get(x, 0x9)];
+        z[3] = x[1] ^ S5[ get(z, 0xA)] ^ S6[get(z, 0x9)] ^ S7[get(z, 0xB )] ^ S8[get( z, 0x8 )] ^ S6[get(x, 0xB)];
+
+        K[8 + i * 16] = S5[get(z, 0x3)] ^ S6[get(z, 0x2)] ^ S7[get(z, 0xC)] ^ S8[get(z, 0xD)] ^ S5[get(z, 0x9)];
+        K[9 + i * 16] = S5[get(z, 0x1)] ^ S6[get(z, 0x0)] ^ S7[get(z, 0xE)] ^ S8[get(z, 0xF)] ^ S6[get(z, 0xC)];
+        K[10 + i * 16] = S5[get(z, 0x7)] ^ S6[get(z, 0x6)] ^ S7[get(z, 0x8)] ^ S8[get(z, 0x9)] ^ S7[get(z, 0x2)];
+        K[11 + i * 16] = S5[get(z, 0x5)] ^ S6[get(z, 0x4)] ^ S7[get(z, 0xA)] ^ S8[get(z, 0xB)] ^ S8[get(z, 0x6)];
+
+        x[0] = z[2] ^ S5[get(z, 0x5)] ^ S6[get(z, 0x7)] ^ S7[get(z, 0x4)] ^ S8[get(z, 0x6)] ^ S7[get(z, 0x0)];
+        x[1] = z[0] ^ S5[get(x, 0x0)] ^ S6[get(x, 0x2)] ^ S7[get(x, 0x1)] ^ S8[get(x, 0x3)] ^ S8[get(z, 0x2)];
+        x[2] = z[1] ^ S5[get(x, 0x7)] ^ S6[get(x, 0x6)] ^ S7[get(x, 0x5)] ^ S8[get(x, 0x4)] ^ S5[get(z, 0x1)];
+        x[3] = z[3] ^ S5[get(x, 0xA)] ^ S6[get(x, 0x9)] ^ S7[get(x, 0xB)] ^ S8[get(x, 0x8)] ^ S6[get(z, 0x3)];
+
+	    K[12 + i * 16] = S5[get(x, 0x8)] ^ S6[get(x, 0x9)] ^ S7[get(x, 0x7)] ^ S8[get(x, 0x6)] ^ S5[get(x, 0x3)];
+        K[13 + i * 16] = S5[get(x, 0xA)] ^ S6[get(x, 0xB)] ^ S7[get(x, 0x5)] ^ S8[get(x, 0x4)] ^ S6[get(x, 0x7)];
+        K[14 + i * 16] = S5[get(x, 0xC)] ^ S6[get(x, 0xD)] ^ S7[get(x, 0x3)] ^ S8[get(x, 0x2)] ^ S7[get(x, 0x8)];
+        K[15 + i * 16] = S5[get(x, 0xE)] ^ S6[get(x, 0xF)] ^ S7[get(x, 0x1)] ^ S8[get(x, 0x0)] ^ S8[get(x, 0xD)];
+    }
+
+	uint32_t L_prev, R_prev, L_cur, R_cur;
+
+	uint32_t I, F;
+	uint8_t Ia, Ib, Ic, Id;
+
+	uint32_t Kmi, Kri;
+
+	uint32_t tmp;
+
+	L_prev = (msg >> 32) & 0xFFFFFFFF;
+	R_prev = msg & 0xFFFFFFFF;
+
+	for (int i = 0; i < 16; ++i) {
+		int j = (to_encrypt) ? i : 15 - i;
+
+		L_cur = R_prev;
+
+		Kmi = K[j];
+		Kri = K[j + 16] & 0x1F;
+
+		switch (j % 3)
+		{
+		case 0:
+			I = cyclic_left_shift(Kmi + R_prev, Kri);
+			split(I, Ia, Ib, Ic, Id);
+			F = S1[Ia] ^ S2[Ib];
+			tmp = S3[Ic] + S4[Id];
+			F = F - tmp;
+
+		case 1:
+			I = cyclic_left_shift(Kmi ^ R_prev, Kri);
+			split(I, Ia, Ib, Ic, Id);
+			F = S1[Ia] - S2[Ib];
+			tmp = S3[Ic] ^ S4[Id];
+			F = F + tmp;
+			break;
+
+		case 2:
+			I = cyclic_left_shift(Kmi - R_prev, Kri);
+			split(I, Ia, Ib, Ic, Id);
+			F = S1[Ia] + S2[Ib];
+			tmp = S3[Ic] - S4[Id];
+			F = F ^ tmp;
+			break;
+
+		default:
+			break;
+		}
+
+		R_cur = L_prev ^ F;
+
+		L_prev = L_cur;
+		R_prev = R_cur;
+	}
+
+	std::swap(L_cur, R_cur);
+
+	return ((uint64_t) L_cur) << 32 | (uint64_t) R_cur;
+}
 
 uint64_t cast128::encrypt(uint64_t msg, uint64_t key[2]) {
 	return cast128::process(msg, key, true);
