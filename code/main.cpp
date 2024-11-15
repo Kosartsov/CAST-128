@@ -1,4 +1,5 @@
 #include "cast128.h"
+#include "cast128.cpp"
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -19,3 +20,4 @@ int main() {
     std::cout << "Message: 0x" << std::hex << msg << std::endl;
     std::cout << "Encoded: 0x" << std::hex << encoded_msg << std::endl;
     std::cout << "Decoded: 0x" << std::hex << decoded_msg << std::endl;
+}
